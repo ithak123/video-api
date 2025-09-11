@@ -2,7 +2,7 @@ from fastapi import FastAPI,UploadFile,File, Form, HTTPException
 from app.services.recipes.convert import convert_to_mp4
 from app.services.request_runner import run_recipe_from_upload
 
-app = FastAPI(title="Video Processing API", version="0.1.0", debug=True)
+app = FastAPI(title="Video Processing API", version="0.1.0")
 
 @app.get("/health")
 def health():

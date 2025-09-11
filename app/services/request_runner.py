@@ -25,13 +25,15 @@ async def run_recipe_from_upload(
     input_path = save_upload_to_temp(data, suffix=suffix)
 
     try:
-        #מנסים להריץ את מתכון ההמרה הרצוי
         out_path, elapsed, cmd = recipe_fn(input_path)
     except FFmpegError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"FFmpegError: {e}")
+    except Exception as e:
+        # למשל בעיות הרשאות, נתיב, או באג בפייתון
+        raise HTTPException(status_code=500, detail=f"Unhandled error: {repr(e)}")
     finally:
+        #  ניקוי
         try:
-            #תמחק את הקובץ הזמני
             input_path.unlink(missing_ok=True)
         except Exception:
             pass
