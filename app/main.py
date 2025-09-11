@@ -2,6 +2,7 @@ from fastapi import FastAPI,UploadFile,File, Form, HTTPException
 from app.services.recipes.convert import convert_to_mp4
 from app.services.request_runner import run_recipe_from_upload
 from app.services.recipes.trim import trim_video          # ← חדש
+from app.services.recipes.resize import resize_video
 
 app = FastAPI(title="Video Processing API", version="0.1.0")
 
@@ -36,4 +37,17 @@ async def trim(
         suffix_from=file.filename,
         recipe_fn=lambda p: trim_video(p, start=start, duration=duration, overwrite=True),
         extra_headers={"X-Operation": "trim", "X-Mode": "copy"},
+    )
+
+@app.post("/resize")
+async def resize(file: UploadFile = File(...), scale_percent: float = Form(...)):
+    if scale_percent <= 4 or scale_percent > 400:
+        raise HTTPException(status_code=422, detail="scale percentage must be between 4 and 400")
+
+    return await run_recipe_from_upload(
+        file,
+        suffix_from=file.filename,
+        recipe_fn=lambda p: resize_video(p, scale_percent=scale_percent, overwrite=True),
+
+        extra_headers={"X-Operation": "resize", "X-Scale-Percent": str(scale_percent)},
     )
