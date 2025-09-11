@@ -1,3 +1,4 @@
+import mimetypes
 from pathlib import Path
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
@@ -12,7 +13,7 @@ async def run_recipe_from_upload(
     *, #מחייב אותנו שהכל אחריו יבוא לא בשורה אלא בעמודה
     suffix_from: str | None,
     recipe_fn,  # פונקציית המתכון: Path -> (Path, float, str)
-    output_media_type: str = "video/mp4",
+    output_media_type: str | None = None,
     extra_headers: dict | None = None,
 ):
 
@@ -42,5 +43,9 @@ async def run_recipe_from_upload(
     headers = {"X-Elapsed-Seconds": f"{elapsed:.3f}", "X-FFmpeg-Cmd": cmd}
     if extra_headers:
         headers.update(extra_headers)
-    return FileResponse(path=out_path, media_type=output_media_type, filename=out_path.name, headers=headers)
+
+    #  זיהוי MIME אוטומטי אם לא הועבר במפורש
+    media_type = output_media_type or mimetypes.guess_type(out_path.name)[0] or "application/octet-stream"
+
+    return FileResponse(path=out_path, media_type=media_type, filename=out_path.name, headers=headers)
 
