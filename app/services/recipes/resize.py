@@ -23,7 +23,7 @@ def resize_video(input_path: Path, scale_percent: float, overwrite: bool = True)
         "ffmpeg",
         *base_flags(overwrite),
         "-i", str(input_path),
-        "-vf", scale_expr,#יscale ההוא פילטר שמקטין מגדיל את התמונה בסרטון
+        "-vf", scale_expr,#יscale ההוא פילטר שמקטין/מגדיל את רזולוציית התמונה בסרטון
         "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
         "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k",
