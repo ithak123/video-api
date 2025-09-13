@@ -17,3 +17,11 @@ FFMPEG_LOGLEVEL    = "error"             # רק שגיאות בלי חפירות
 
 # כמה תווים מה-stderr להחזיר בתיאור שגיאה (ב-JSON) אם FFmpeg נפל
 STDERR_TAIL_CHARS  = 800
+
+T_O_FONT_FILE = Path("app/NotoSansHebrew-Regular.ttf")  # פונט עברי bundled
+T_O_MARGIN_PX = 40                         # שוליים פנימיים קבועים
+T_O_FONT_COLOR = "white"                   # צבע טקסט ברירת מחדל
+T_O_BORDER_W = 2                           # עובי outline
+T_O_BORDER_COLOR = "black@1"               # צבע outline
+T_O_DEFAULT_POSITION = "bottom-right"      # מיקום ברירת מחדל
+T_O_DEFAULT_FONT_SIZE = 36                 # גודל פונט ברירת מחדל
