@@ -1,0 +1,41 @@
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+*.log
+
+# Virtualenvs (מקומיים)
+.venv/
+venv/
+env/
+
+# Caches / test outputs / coverage
+.cache/
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# IDE / Editor junk
+.idea/
+.vscode/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Git history (ענקית, לא צריך בתוך האימג')
+.git/
+
+# Project data (קבצי קלט/פלט שלא שייך להכניס לאימג')
+data/uploads/*
+data/outputs/*
+data/tmp/*
