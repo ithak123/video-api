@@ -7,6 +7,8 @@ from app.services.recipes.resize import resize_video
 from app.services.recipes.rotate import rotate_video
 from app.services.recipes.overlay_text import overlay_text_video
 from app.core.config import T_O_DEFAULT_POSITION, T_O_DEFAULT_FONT_SIZE
+from app.services.recipes.grayscale import grayscale_video
+
 
 app = FastAPI(title="Video Processing API", version="0.1.0")
 
@@ -22,7 +24,7 @@ async def convert(file: UploadFile = File(...), to_formt: str = Form("mp4")):
     return await run_recipe_from_upload(
         file,
         suffix_from=file.filename,
-        recipe_fn=lambda p: convert_to_mp4(p, overwrite=True),
+        recipe_fn=convert_to_mp4,
         output_media_type="video/mp4",
         extra_headers={"X-Operation": "convert"},
     )
@@ -84,18 +86,17 @@ async def overlay_text(
     return await run_recipe_from_upload(
         file,
         suffix_from=file.filename,
-        recipe_fn=lambda p: overlay_text_video(
-            p,
-            text=text,
-            position=position,
-            font_size=font_size,
-            overwrite=True,
-        ),
-        extra_headers={
-            "X-Operation": "overlay-text",
-            "X-Overlay-Position": position,
-            "X-Overlay-FontSize": str(font_size),
-            "X-Overlay-FontColor": "white",
-            "X-Overlay-Outline": "borderw=2,bordercolor=black@1",
-        },
+        recipe_fn=lambda p: overlay_text_video(p,text=text, position=position, font_size=font_size,overwrite=True,),
+        extra_headers={"X-Operation": "overlay-text","X-Overlay-Position": position, "X-Overlay-FontSize": str(font_size), "X-Overlay-FontColor": "white", "X-Overlay-Outline": "borderw=2,bordercolor=black@1", },
+    )
+
+@app.post("/grayscale")
+async def grayscale(file: UploadFile = File(...)):
+
+    return await run_recipe_from_upload(
+        file,
+        suffix_from=file.filename,
+        recipe_fn=grayscale_video,
+        output_media_type="video/mp4",
+        extra_headers={"X-Operation": "grayscale"},
     )

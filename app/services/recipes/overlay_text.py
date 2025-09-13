@@ -101,7 +101,7 @@ def overlay_text_video(
         "-metadata:s:v:0", "rotate=0",
         str(out_path),
     ]
-    print("FFmpeg CMD:", " ".join(cmd), flush=True)
+
     _, elapsed = run_ffmpeg(cmd)
 
     if not out_path.exists():
