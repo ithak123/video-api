@@ -8,6 +8,7 @@ from app.services.recipes.rotate import rotate_video
 from app.services.recipes.overlay_text import overlay_text_video
 from app.core.config import T_O_DEFAULT_POSITION, T_O_DEFAULT_FONT_SIZE
 from app.services.recipes.grayscale import grayscale_video
+from app.services.request_runner import build_steps_from_ops_json, run_pipeline_from_upload
 
 
 app = FastAPI(title="Video Processing API", version="0.1.0")
@@ -99,4 +100,18 @@ async def grayscale(file: UploadFile = File(...)):
         recipe_fn=grayscale_video,
         output_media_type="video/mp4",
         extra_headers={"X-Operation": "grayscale"},
+    )
+
+@app.post("/process")
+async def process(
+    file: UploadFile = File(...),
+    ops: str = Form(..., description='JSON list, e.g. [{"op":"grayscale"},{"op":"rotate","degrees":90}]'),
+):
+    steps, names = build_steps_from_ops_json(ops)
+    return await run_pipeline_from_upload(
+        file,
+        suffix_from=file.filename,
+        steps=steps,
+        output_media_type="video/mp4",
+        extra_headers={"X-Operations": ",".join(names)},
     )
