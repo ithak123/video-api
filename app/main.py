@@ -9,7 +9,11 @@ from app.services.recipes.overlay_text import overlay_text_video
 from app.core.config import T_O_DEFAULT_POSITION, T_O_DEFAULT_FONT_SIZE
 from app.services.recipes.grayscale import grayscale_video
 from app.services.request_runner import build_steps_from_ops_json, run_pipeline_from_upload
-
+from fastapi.responses import JSONResponse
+from pathlib import Path
+import tempfile, shutil
+from app.services.recipes.focus_with_opencv import analyze_focus_segments_simple
+from app.services.recipes.focus_ffmpeg import analyze_focus_segments_ffmpeg, FFmpegError
 
 app = FastAPI(title="Video Processing API", version="0.1.0")
 
@@ -115,3 +119,67 @@ async def process(
         output_media_type="video/mp4",
         extra_headers={"X-Operations": ",".join(names)},
     )
+
+@app.post("/focus_with_opencv")
+async def analyze_focus(upload_file: UploadFile):
+    # שמירה זמנית (KISS)
+    suffix = Path(upload_file.filename or "in.mp4").suffix or ".mp4"
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp_path = Path(tmp.name)
+            shutil.copyfileobj(upload_file.file, tmp)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"save failed: {e}")
+
+    try:
+        result, elapsed = analyze_focus_segments_simple(
+            tmp_path,
+            target_fps=6.0,
+            width=640,
+            smooth_win=5,
+            thr_factor=0.6,
+            min_len_s=0.5,
+            merge_gap_s=0.33,
+            include_scores=False,
+        )
+        result["elapsed_sec"] = round(elapsed, 3)
+        result["tool"] = "opencv_laplacian_var"
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"focus analysis failed: {e}")
+    finally:
+        try: tmp_path.unlink(missing_ok=True)
+        except Exception: pass
+
+@app.post("/focus_ffmpeg")
+async def analyze_focus_ffmpeg(upload_file: UploadFile):
+    suffix = Path(upload_file.filename or "in.mp4").suffix or ".mp4"
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp_path = Path(tmp.name)
+            shutil.copyfileobj(upload_file.file, tmp)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"save failed: {e}")
+
+    try:
+        result, elapsed, cmd = analyze_focus_segments_ffmpeg(
+            tmp_path,
+            fps=6.0,
+            width=640,
+            smooth_win=5,
+            thr_factor=0.6,
+            min_len_s=0.5,
+            merge_gap_s=0.33,
+            include_scores=False
+        )
+        result["elapsed_sec"] = round(elapsed, 3)
+        result["tool"] = "ffmpeg_sobel+signalstats"
+        result["ffmpeg_cmd"] = cmd
+        return JSONResponse(content=result)
+    except FFmpegError as e:
+        raise HTTPException(status_code=400, detail=f"focus(ffmpeg) failed: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"unexpected error: {e}")
+    finally:
+        try: tmp_path.unlink(missing_ok=True)
+        except Exception: pass

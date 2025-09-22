@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Video Pipeline UI </title>
+<style>
+  body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+  h1 { font-size: 20px; margin-bottom: 8px; }
+  fieldset { border: 1px solid #ccc; padding: 12px; margin: 12px 0; }
+  legend { padding: 0 6px; font-weight: 600; }
+  label { display: inline-block; min-width: 120px; }
+  input[type="number"], input[type="text"], select { padding: 4px; }
+  button { padding: 6px 10px; cursor: pointer; }
+  .row { margin: 6px 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .queue { border: 1px dashed #aaa; padding: 10px; min-height: 48px; background: #ffffff; }
+  .step { display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin: 6px 0; background: #fff; border: 1px solid #dddddd; }
+  .step .name { font-weight: 600; }
+  .muted { color: #666; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>עיבוד וידאו – Pipeline פשוט</h1>
+
+<form id="procForm" method="post" enctype="multipart/form-data" target="_blank" action="http://127.0.0.1:8000/process">
+  <div class="row">
+    <label for="serverUrl">כתובת ה־API:</label>
+    <input id="serverUrl" type="text" value="http://127.0.0.1:8000/process" style="width: 360px;">
+  </div>
+
+  <div class="row">
+    <label for="file">קובץ וידאו:</label>
+    <input id="file" name="file" type="file" accept="video/*" required>
+  </div>
+
+  <!-- תור צעדים — ימולא ע"י הכפתורים למטה -->
+  <input type="hidden" id="opsInput" name="ops" value="[]">
+
+  <fieldset>
+    <legend>תור צעדים</legend>
+    <div id="queue" class="queue"></div>
+    <div class="row">
+      <button type="button" id="clearQueue">נקה תור</button>
+      <span class="muted">סדר הצעדים בתור הוא סדר הריצה בפועל</span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>צעדים זמינים (הוסף לתור)</legend>
+
+    <div class="grid">
+
+      <div>
+        <h3>Grayscale</h3>
+        <div class="row">
+          <button type="button" onclick="addGrayscale()">הוסף Grayscale</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Rotate</h3>
+        <div class="row">
+          <label>Degrees:</label>
+          <select id="rotDegrees">
+            <option value="90">90</option>
+            <option value="180">180</option>
+            <option value="270">270</option>
+          </select>
+        </div>
+        <div class="row">
+          <button type="button" onclick="addRotate()">הוסף Rotate</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Overlay Text</h3>
+        <div class="row">
+          <label>טקסט:</label>
+          <input id="otText" type="text" placeholder="שלום">
+        </div>
+        <div class="row">
+          <label>מיקום:</label>
+          <select id="otPos">
+            <option>bottom-right</option>
+            <option>bottom-left</option>
+            <option>top-right</option>
+            <option>top-left</option>
+            <option>center</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>גודל פונט:</label>
+          <input id="otSize" type="number" min="1" max="200" value="36" style="width:80px;">
+        </div>
+        <div class="row">
+          <button type="button" onclick="addOverlay()">הוסף Overlay Text</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Resize</h3>
+        <div class="row">
+          <label>% Scale:</label>
+          <input id="rsPercent" type="number" value="100" min="5" max="400" step="1" style="width:100px;">
+        </div>
+        <div class="row">
+          <button type="button" onclick="addResize()">הוסף Resize</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Trim</h3>
+        <div class="row">
+          <label>Start (sec):</label>
+          <input id="trStart" type="number" min="0" step="0.1" value="0" style="width:100px;">
+        </div>
+        <div class="row">
+          <label>Duration (sec):</label>
+          <input id="trDur" type="number" min="0.1" step="0.1" value="2" style="width:100px;">
+        </div>
+        <div class="row">
+          <button type="button" onclick="addTrim()">הוסף Trim</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Convert → MP4</h3>
+        <div class="row">
+          <button type="button" onclick="addConvert()">הוסף Convert</button>
+        </div>
+      </div>
+
+    </div>
+  </fieldset>
+
+  <div class="row">
+    <button type="submit">שלח לעיבוד (פותח בלשונית חדשה)</button>
+  </div>
+</form>
+
+<script>
+  // תור הצעדים (מערך של אובייקטים בדיוק כמו שהשרת מצפה ב-ops)
+  const steps = [];
+  const queueEl = document.getElementById('queue');
+  const opsInput = document.getElementById('opsInput');
+  const form = document.getElementById('procForm');
+  const serverUrlInput = document.getElementById('serverUrl');
+
+  // רנדר פשוט של התור
+  function renderQueue() {
+    queueEl.innerHTML = '';
+    if (steps.length === 0) {
+      queueEl.innerHTML = '<div class="muted">אין צעדים עדיין. הוסף בעזרת הכפתורים למעלה.</div>';
+      opsInput.value = '[]';
+      return;
+    }
+    steps.forEach((step, idx) => {
+      const div = document.createElement('div');
+      div.className = 'step';
+      const title = document.createElement('span');
+      title.className = 'name';
+      title.textContent = step.op;
+
+      const params = document.createElement('span');
+      params.className = 'muted';
+      params.textContent = summarize(step);
+
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.textContent = '▲';
+      upBtn.title = 'הזז למעלה';
+      upBtn.onclick = () => { if (idx>0) { [steps[idx-1], steps[idx]] = [steps[idx], steps[idx-1]]; renderQueue(); } };
+
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.textContent = '▼';
+      downBtn.title = 'הזז למטה';
+      downBtn.onclick = () => { if (idx<steps.length-1) { [steps[idx+1], steps[idx]] = [steps[idx], steps[idx+1]]; renderQueue(); } };
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'הסר';
+      removeBtn.onclick = () => { steps.splice(idx,1); renderQueue(); };
+
+      div.appendChild(title);
+      div.appendChild(params);
+      div.appendChild(upBtn);
+      div.appendChild(downBtn);
+      div.appendChild(removeBtn);
+      queueEl.appendChild(div);
+    });
+
+    // מעדכנים את ה-hidden input של הטופס (זה מה שנשלח לשרת)
+    opsInput.value = JSON.stringify(steps);
+  }
+
+  function summarize(step) {
+    switch (step.op) {
+      case 'rotate': return ` (${step.degrees}°)`;
+      case 'overlay_text': return ` (“${step.text}”, pos=${step.position}, size=${step.font_size})`;
+      case 'resize': return ` (${step.scale_percent}%)`;
+      case 'trim': return ` (start=${step.start}s, dur=${step.duration}s)`;
+      default: return '';
+    }
+  }
+
+  // בוני צעדים (KISS)
+  function addGrayscale() {
+    steps.push({ op: 'grayscale' });
+    renderQueue();
+  }
+  function addRotate() {
+    const d = parseInt(document.getElementById('rotDegrees').value, 10);
+    steps.push({ op: 'rotate', degrees: d });
+    renderQueue();
+  }
+  function addOverlay() {
+    const t = document.getElementById('otText').value.trim();
+    if (!t) { alert('חובה למלא טקסט ל-Overlay'); return; }
+    const pos = document.getElementById('otPos').value;
+    const fs = parseInt(document.getElementById('otSize').value, 10);
+    steps.push({ op: 'overlay_text', text: t, position: pos, font_size: fs });
+    renderQueue();
+  }
+  function addResize() {
+    const p = parseFloat(document.getElementById('rsPercent').value);
+    if (isNaN(p) || p <= 4 || p > 400) { alert('Scale אחוזים חייב להיות בין 5 ל-400'); return; }
+    steps.push({ op: 'resize', scale_percent: p });
+    renderQueue();
+  }
+  function addTrim() {
+    const st = parseFloat(document.getElementById('trStart').value);
+    const du = parseFloat(document.getElementById('trDur').value);
+    if (isNaN(st) || st < 0) { alert('Start שניות חייב להיות >= 0'); return; }
+    if (isNaN(du) || du <= 0) { alert('Duration שניות חייב להיות > 0'); return; }
+    steps.push({ op: 'trim', start: st, duration: du });
+    renderQueue();
+  }
+  function addConvert() {
+    steps.push({ op: 'convert' });
+    renderQueue();
+  }
+
+  // עדכון ה-action מהשדה של ה-URL (כדי שתוכל לשנות פורט/דומיין)
+  serverUrlInput.addEventListener('change', () => {
+    form.setAttribute('action', serverUrlInput.value.trim());
+  });
+
+  document.getElementById('clearQueue').addEventListener('click', () => {
+    steps.length = 0; renderQueue();
+  });
+
+  // ולידציה לפני שליחה – חייבים לפחות צעד אחד
+  form.addEventListener('submit', (e) => {
+    form.setAttribute('action', serverUrlInput.value.trim() || 'http://127.0.0.1:8000/process');
+    if (steps.length === 0) {
+      e.preventDefault();
+      alert('אין צעדים בתור. הוסף לפחות פעולה אחת.');
+      return;
+    }
+    // שמנו כבר ב-opsInput את JSON.stringify(steps) בתוך renderQueue()
+    // הדפדפן ישלח multi-part לשרת, והתגובה (קובץ) תיפתח בלשונית חדשה (target=_blank).
+  });
+
+  // רנדר ראשון
+  renderQueue();
+</script>
+
+</body>
+</html>

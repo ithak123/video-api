@@ -130,7 +130,6 @@ def build_steps_from_ops_json(ops_json: str) -> tuple[List[tuple[str, Callable]]
 
 async def run_pipeline_from_upload(
     upload_file,
-    *,
     suffix_from: str | None,
     steps: List[tuple[str, Callable]],
     output_media_type: str | None = "video/mp4",
