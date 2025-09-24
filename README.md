@@ -38,8 +38,8 @@ A JSON array of operations, in order:
 Other examples:
 
 [
-  {"op":"trim","start":"00:00:00.0","end":"00:00:10.0"},
-  {"op":"resize","scale_percent":50}
+  {"op":"trim","start": 0.0, "duration": 10.0},
+  {"op":"resize","scale_percent": 50}
 ]
 
 [
