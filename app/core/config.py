@@ -25,3 +25,5 @@ T_O_BORDER_W = 2                           # עובי outline
 T_O_BORDER_COLOR = "black@1"               # צבע outline
 T_O_DEFAULT_POSITION = "bottom-right"      # מיקום ברירת מחדל
 T_O_DEFAULT_FONT_SIZE = 36                 # גודל פונט ברירת מחדל
+
+WEB_SAFE = dict(vcodec="libx264", acodec="aac", pix_fmt="yuv420p", movflags="+faststart", preset="veryfast", crf=23)

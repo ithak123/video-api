@@ -1,10 +1,11 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Tuple
-
-from app.services.ffmpeg_runner import run_ffmpeg, base_flags
+from app.services.ffmpeg_runner import run_ffmpeg
 from app.utils.paths import unique_output
 from app.core.errors import FFmpegError
+import ffmpeg
+from app.core.config import WEB_SAFE
 
 
 def resize_video(input_path: Path, scale_percent: float, overwrite: bool = True) -> Tuple[Path, float, str]:
@@ -12,13 +13,13 @@ def resize_video(input_path: Path, scale_percent: float, overwrite: bool = True)
     if scale_percent < 4:
        raise FFmpegError("scale_percent must be > 4")
 
-    factor = scale_percent / 100
-
+    f = scale_percent / 100.0 # המרה לאחוזים
+    w_expr = f"trunc(iw*{f}/2)*2" #רוחב וגובה בכניסה מכפילים באחוז הסקייל
+    h_expr = f"trunc(ih*{f}/2)*2"
     out_path = unique_output(input_path.stem, ".mp4")
-
+    """""
     # בדיקה האם זה אי זוגי , והמרה בהתאם לזוגי בשביל המוקדד
     scale_expr = f"scale=trunc(iw*{factor}/2)*2:trunc(ih*{factor}/2)*2"
-
     cmd = [
         "ffmpeg",
         *base_flags(overwrite),
@@ -30,6 +31,13 @@ def resize_video(input_path: Path, scale_percent: float, overwrite: bool = True)
         "-movflags", "+faststart",
         str(out_path),
     ]
+    """""
+    cmd = (
+        ffmpeg
+        .input(str(input_path))
+        .filter("scale", w_expr, h_expr)
+        .output(str(out_path), **WEB_SAFE)
+    )
 
     _, elapsed = run_ffmpeg(cmd)
 

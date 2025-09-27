@@ -8,7 +8,7 @@ import cv2
 #מטרת הפונקציה לתת מספר חדות(כמה התמונה משוננת)
 def _vol(gray: np.ndarray) -> float:
     #יnp.ndarray הוא מערך דו ממדי שבו כל תא מבטא פיקסל
-    gray = cv2.GaussianBlur(gray, (3,3), 0.8)  # יGaussianBlur מוריד רעש נקודתי(פעמון גאוס)
+    gray = cv2.GaussianBlur(gray, (3,3), 0.8)  #ב להיות אי־זוג יGaussianBlur מוריד רעש נקודתי(פעמון גאוס)
     lap = cv2.Laplacian(gray, ddepth=cv2.CV_64F, ksize=3) #יLaplacian בודק כמה כל פיקסל שונה משכנו(מכפיל במסכה ומאחד למספר)
     return float(lap.var()) #חישוב שונות לפריים
 

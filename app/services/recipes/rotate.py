@@ -1,10 +1,12 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Tuple
-
-from app.services.ffmpeg_runner import run_ffmpeg, base_flags
+from app.services.ffmpeg_runner import run_ffmpeg
 from app.utils.paths import unique_output
 from app.core.errors import FFmpegError
+from app.core.config import WEB_SAFE
+import ffmpeg
+
 
 def rotate_video(input_path: Path, degrees: int, overwrite: bool = True) -> Tuple[Path, float, str]:
 
@@ -13,7 +15,7 @@ def rotate_video(input_path: Path, degrees: int, overwrite: bool = True) -> Tupl
 
     suffix = f"_rot{degrees}cw"
     out_path = unique_output(input_path.stem + suffix, ".mp4")
-
+    """""
     if degrees == 90:
         vf = "transpose=1"
     elif degrees == 180:
@@ -34,7 +36,26 @@ def rotate_video(input_path: Path, degrees: int, overwrite: bool = True) -> Tupl
         "-metadata:s:v:0", "rotate=0",#אנחנו מאפסים את הדגל של הrotate בכדי למנוע סיבוב כפול
         str(out_path),
     ]
-    print("FFmpeg CMD:", " ".join(cmd), flush=True)
+    """""
+    if degrees in (90, 270):
+        # transpose מדויק ל-90/270
+        mode = 1 if degrees == 90 else 2
+        cmd = (
+            ffmpeg
+            .input(str(input_path))
+            .filter("transpose", mode)
+            .output(str(out_path), **WEB_SAFE, preset="veryfast", crf=23)
+        )
+    elif degrees == 180:
+        cmd = (
+            ffmpeg
+            .input(str(input_path))
+            .filter("hflip")
+            .filter("vflip")
+            .output(str(out_path), **WEB_SAFE, preset="veryfast", crf=23)
+        )
+    else:
+        raise ValueError("degrees must be 90/180/270")
     _, elapsed = run_ffmpeg(cmd)
 
     if not out_path.exists():
