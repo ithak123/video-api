@@ -26,10 +26,10 @@ def convert_to_mp4(input_path: Path, overwrite: bool = True) -> Tuple[Path, floa
         .output(str(out_path),**WEB_SAFE)
     )
     #ההרצה בפועל ושמירת זמן הריצה
-    _, elapsed = run_ffmpeg(cmd)
+    elapsed, c = run_ffmpeg(cmd)
 
     if not out_path.exists():
         raise RuntimeError("Output not created (unexpected).")
 
         # מחזירים את נתיב הפלט, זמן הריצה
-    return out_path, elapsed, " ".join(cmd)
+    return out_path, elapsed, " ".join(c)

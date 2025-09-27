@@ -30,9 +30,9 @@ def grayscale_video(input_path: Path, overwrite: bool = True) -> Tuple[Path, flo
         .filter("hue", s=0)
         .output(str(out_path), **WEB_SAFE)
    )
-   _, elapsed = run_ffmpeg(cmd)
+   elapsed, c = run_ffmpeg(cmd)
 
    if not out_path.exists():
         raise FFmpegError("no output produced")
 
-   return out_path, elapsed, " ".join(cmd)
+   return out_path, elapsed, " ".join(c)

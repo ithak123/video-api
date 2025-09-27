@@ -28,9 +28,9 @@ def trim_video(input_path: Path, start: float, duration: float, overwrite: bool 
         .input(str(input_path), ss=start, t=duration)
         .output(str(out_path), **WEB_SAFE)
     )
-    _, elapsed = run_ffmpeg(cmd)
+    elapsed,c = run_ffmpeg(cmd)
 
     if not out_path.exists():
         raise FFmpegError("no output produced")
 
-    return out_path, elapsed, " ".join(cmd)
+    return out_path, elapsed, " ".join(c)

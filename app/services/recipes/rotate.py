@@ -44,7 +44,7 @@ def rotate_video(input_path: Path, degrees: int, overwrite: bool = True) -> Tupl
             ffmpeg
             .input(str(input_path))
             .filter("transpose", mode)
-            .output(str(out_path), **WEB_SAFE, preset="veryfast", crf=23)
+            .output(str(out_path), **WEB_SAFE)
         )
     elif degrees == 180:
         cmd = (
@@ -52,13 +52,13 @@ def rotate_video(input_path: Path, degrees: int, overwrite: bool = True) -> Tupl
             .input(str(input_path))
             .filter("hflip")
             .filter("vflip")
-            .output(str(out_path), **WEB_SAFE, preset="veryfast", crf=23)
+            .output(str(out_path), **WEB_SAFE)
         )
     else:
         raise ValueError("degrees must be 90/180/270")
-    _, elapsed = run_ffmpeg(cmd)
+    elapsed,c = run_ffmpeg(cmd)
 
     if not out_path.exists():
         raise FFmpegError("no output produced")
 
-    return out_path, elapsed, " ".join(cmd)
+    return out_path, elapsed, " ".join(c)

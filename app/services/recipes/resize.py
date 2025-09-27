@@ -39,9 +39,9 @@ def resize_video(input_path: Path, scale_percent: float, overwrite: bool = True)
         .output(str(out_path), **WEB_SAFE)
     )
 
-    _, elapsed = run_ffmpeg(cmd)
+    elapsed, c = run_ffmpeg(cmd)
 
     if not out_path.exists():
         raise FFmpegError("No output produced")
 
-    return out_path, elapsed, " ".join(cmd)
+    return out_path, elapsed, " ".join(c)

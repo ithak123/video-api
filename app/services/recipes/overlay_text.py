@@ -27,8 +27,7 @@ def overlay_text_video(input_path: Path, text: str, position: str="bottom-right"
                 fontcolor="white",
                 x=x_expr, y=y_expr,
                 box=1, boxcolor="black@0.5", boxborderw=10)
-        .output(str(out_path), **WEB_SAFE, preset="veryfast", crf=23)
+        .output(str(out_path), **WEB_SAFE)
     )
-    _, elapsed = run_ffmpeg(cmd)
-    return out_path, elapsed, cmd
-
+    elapsed,c = run_ffmpeg(cmd)
+    return out_path, elapsed, " ".join(c)
